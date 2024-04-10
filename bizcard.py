@@ -61,14 +61,10 @@ st.set_page_config(layout="wide")
 with st.sidebar:   
     
     st.image("OCRR.png") 
-    selected = option_menu("Main Menu", ["Intro",'Upload Image','View & Modify','Delete','Contact Us'], 
-        icons=['house','upload','pencil-square','download','phone'])
+    selected = option_menu("Main Menu", ['Upload Image','View & Modify','Delete','Contact Us'], 
+        icons=['upload','pencil-square','download','phone'])
 
-if selected=="Intro":
-    st.title("*:green[Welcome to Boopathi's BizCardX] :sunglasses:*")
-    
-    
-elif selected=="Upload Image":                  
+if selected=="Upload Image":                  
     uploaded_files = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
 
     if uploaded_files is not None:
@@ -111,8 +107,7 @@ elif selected=="View & Modify":
     if selected_option == "Select Below Options":
         pass
     elif selected_option == "Preview text":
-                    mydb = psycopg2.connect(host="localhost",
-                                            user="postgres", password="758595",
+                    mydb = psycopg2.connect(host="localhost",user="postgres", password="758595",
                                             database="bizcard",port="5432")
                     cursor = mydb.cursor()                
                     select_data="select * from bizcard_details"
@@ -123,12 +118,90 @@ elif selected=="View & Modify":
                     table_df
         
     elif selected_option == "Modify text":
-        pass   
+                    mydb = psycopg2.connect(host="localhost",user="postgres", password="758595",
+                                            database="bizcard",port="5432")
+                    cursor = mydb.cursor()                
+                    select_data="select * from bizcard_details"
+                    cursor.execute(select_data)
+                    table=cursor.fetchall()
+                    mydb.commit()
+                    table_df=pd.DataFrame(table,columns=("name","designation","company_name","contact","email","website","address","pincode"))
 
+                    select_name=st.selectbox("Select the Name",table_df["name"])
+                    df3=table_df[table_df["name"]==select_name]
+                   
+                    df4=df3.copy()
+                    st.dataframe(df4)   
+                    
+                    coll1,coll2=st.columns(2)
+                    with coll1:     
+                        modi_name=st.text_input("Name",df3["name"].unique()[0])      
+                        modi_design=st.text_input("Designation",df3["designation"].unique()[0])    
+                        modi_company=st.text_input("Company_name",df3["company_name"].unique()[0])    
+                        modi_contact=st.text_input("Contact",df3["contact"].unique()[0])  
+                        
+                        df4["name"]=modi_name
+                        df4["designation"]=modi_design
+                        df4["company_name"]=modi_company
+                        df4["contact"]=modi_contact
+                                           
+        
+                    with coll2:     
+                        modi_mail=st.text_input("Email",df3["email"].unique()[0])      
+                        modi_web=st.text_input("Website",df3["website"].unique()[0])    
+                        modi_address=st.text_input("Address",df3["address"].unique()[0])    
+                        modi_pincode=st.text_input("Pincode",df3["pincode"].unique()[0]) 
+                        
+                        df4["email"]=modi_mail
+                        df4["website"]=modi_web
+                        df4["address"]=modi_address
+                        df4["pincode"]=modi_pincode
+                    
+                    st.dataframe(df4)    
+                    
+                    coll1, coll2 = st.columns(2)
+                    with coll1:
+                        button2 = st.button("Modify Text", use_container_width=True)
+                        mydb = psycopg2.connect(host="localhost", user="postgres", password="758595", database="bizcard", port="5432")
+                        cursor = mydb.cursor()
+
+                    if button2:
+                                               
+                        cursor.execute(f"delete from bizcard_details where name='{select_data}'")
+                        mydb.commit()
+
+                        insert_data = '''insert into bizcard_details(name,designation,company_name,contact,email,website,address,pincode)
+                                        values(%s,%s,%s,%s,%s,%s,%s,%s)'''
+                        data = df4.values.tolist()
+                        cursor.executemany(insert_data, data)
+                        mydb.commit()
+                        st.success("Above the Text data Modify Successfully")
+                        
+elif selected == "Delete": 
+    mydb = psycopg2.connect(host="localhost", user="postgres", password="758595", database="bizcard", port="5432")
+    cursor = mydb.cursor()
+
+    coll1, coll2 = st.columns(2)
+    with coll1:
+        select_data = "SELECT name FROM bizcard_details"
+        cursor.execute(select_data)
+        table5 = cursor.fetchall()
+        mydb.commit()
+
+        names = [i[0] for i in table5]
+        name_select = st.selectbox("Select the Name", names)
+
+        if st.button("Delete", use_container_width=True):
+            delete_query = "DELETE FROM bizcard_details WHERE name = %s"
+            cursor.execute(delete_query, (name_select,))
+            mydb.commit()
+            st.success("Deleted Successfully")
+
+           
 elif selected=="Contact Us":
-    
+    st.title("*:green[Welcome to Boopathi's BizCardX] :sunglasses:*")
     st.title("Contact Us")
-    
+        
     coll1, coll2 = st.columns(2)
 
     with coll1: 
